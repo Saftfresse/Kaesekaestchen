@@ -20,7 +20,10 @@ namespace Main
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            Discoverer.PeerJoined = ip => Console.WriteLine("JOINED:" + ip);
+            Discoverer.PeerLeft = ip => Console.WriteLine("LEFT:" + ip);
 
+            Discoverer.Start();
         }
 
         private void button_triggerLeft_Click(object sender, EventArgs e)
