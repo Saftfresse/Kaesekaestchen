@@ -29,12 +29,12 @@
         private void InitializeComponent()
         {
             this.panel1 = new System.Windows.Forms.Panel();
+            this.label1 = new System.Windows.Forms.Label();
             this.button_triggerLeft = new System.Windows.Forms.Button();
             this.canvas = new System.Windows.Forms.PictureBox();
             this.panel_left = new System.Windows.Forms.Panel();
-            this.label1 = new System.Windows.Forms.Label();
-            this.btn_host = new System.Windows.Forms.Button();
             this.btn_join = new System.Windows.Forms.Button();
+            this.btn_host = new System.Windows.Forms.Button();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.canvas)).BeginInit();
             this.panel_left.SuspendLayout();
@@ -51,6 +51,15 @@
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(1149, 46);
             this.panel1.TabIndex = 0;
+            // 
+            // label1
+            // 
+            this.label1.Font = new System.Drawing.Font("Quicksand Book", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label1.Location = new System.Drawing.Point(55, 4);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(535, 37);
+            this.label1.TabIndex = 1;
+            this.label1.Text = "Käsekästchen";
             // 
             // button_triggerLeft
             // 
@@ -70,13 +79,15 @@
             // 
             // canvas
             // 
-            this.canvas.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.canvas.Location = new System.Drawing.Point(0, 46);
+            this.canvas.Location = new System.Drawing.Point(358, 98);
             this.canvas.Margin = new System.Windows.Forms.Padding(6, 5, 6, 5);
             this.canvas.Name = "canvas";
-            this.canvas.Size = new System.Drawing.Size(1149, 563);
+            this.canvas.Size = new System.Drawing.Size(571, 453);
             this.canvas.TabIndex = 1;
             this.canvas.TabStop = false;
+            this.canvas.Paint += new System.Windows.Forms.PaintEventHandler(this.canvas_Paint);
+            this.canvas.MouseClick += new System.Windows.Forms.MouseEventHandler(this.canvas_MouseClick);
+            this.canvas.MouseMove += new System.Windows.Forms.MouseEventHandler(this.canvas_MouseMove);
             // 
             // panel_left
             // 
@@ -89,14 +100,16 @@
             this.panel_left.Size = new System.Drawing.Size(252, 563);
             this.panel_left.TabIndex = 2;
             // 
-            // label1
+            // btn_join
             // 
-            this.label1.Font = new System.Drawing.Font("Quicksand Book", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label1.Location = new System.Drawing.Point(55, 4);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(535, 37);
-            this.label1.TabIndex = 1;
-            this.label1.Text = "Käsekästchen";
+            this.btn_join.FlatAppearance.BorderSize = 0;
+            this.btn_join.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btn_join.Location = new System.Drawing.Point(3, 52);
+            this.btn_join.Name = "btn_join";
+            this.btn_join.Size = new System.Drawing.Size(246, 38);
+            this.btn_join.TabIndex = 1;
+            this.btn_join.Text = "Spiel Beitreten";
+            this.btn_join.UseVisualStyleBackColor = true;
             // 
             // btn_host
             // 
@@ -108,17 +121,6 @@
             this.btn_host.TabIndex = 0;
             this.btn_host.Text = "Spiel Hosten";
             this.btn_host.UseVisualStyleBackColor = true;
-            // 
-            // btn_join
-            // 
-            this.btn_join.FlatAppearance.BorderSize = 0;
-            this.btn_join.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btn_join.Location = new System.Drawing.Point(3, 52);
-            this.btn_join.Name = "btn_join";
-            this.btn_join.Size = new System.Drawing.Size(246, 38);
-            this.btn_join.TabIndex = 1;
-            this.btn_join.Text = "Spiel Beitreten";
-            this.btn_join.UseVisualStyleBackColor = true;
             // 
             // Form1
             // 
@@ -133,6 +135,7 @@
             this.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(247)))), ((int)(((byte)(247)))));
             this.Margin = new System.Windows.Forms.Padding(6, 5, 6, 5);
             this.Name = "Form1";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Käsekästchen";
             this.Load += new System.EventHandler(this.Form1_Load);
             this.Resize += new System.EventHandler(this.Form1_Resize);
