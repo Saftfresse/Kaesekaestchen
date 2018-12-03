@@ -15,6 +15,24 @@ namespace Main
             lines[1] = new line() { Set = false, SetBy = "" };
         }
 
+        public OutlineDirection readyToFill()
+        {
+            int[] vals = new int[4];
+            if (upperCell.lines[1].Set) vals[0] = 1;
+            if (lines[0].Set) vals[1] = 1;
+            if (lines[1].Set) vals[2] = 1;
+            if (leftCell.lines[0].Set) vals[3] = 1;
+
+            if (true)
+            {
+
+            }
+
+            var count = vals.Count(i => i > 0);
+            Console.WriteLine("Count "+count);
+            return OutlineDirection.None;
+        }
+
         public struct line
         {
             bool set;
@@ -36,12 +54,16 @@ namespace Main
         Rectangle bounds = new Rectangle();
         line[] lines = new line[2];
         bool taken = false;
-        string playerId = "";
+        Guid playerId;
+        Gridcell upperCell = null;
+        Gridcell leftCell = null;
         
         public bool Taken { get => taken; set => taken = value; }
-        public string PlayerId { get => playerId; set => playerId = value; }
+        public Guid PlayerId { get => playerId; set => playerId = value; }
         public Rectangle Bounds { get => bounds; set => bounds = value; }
         public line[] Lines { get => lines; set => lines = value; }
         public List<OutlineDirection> OutlineDirs { get => outlineDirs; set => outlineDirs = value; }
+        public Gridcell UpperCell { get => upperCell; set => upperCell = value; }
+        public Gridcell LeftCell { get => leftCell; set => leftCell = value; }
     }
 }

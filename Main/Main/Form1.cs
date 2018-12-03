@@ -25,7 +25,19 @@ namespace Main
         Point MPos = new Point();
         int cellSize = 40;
         Point pZero = new Point(5,5);
-        
+        Player p1 = new Player() { Name = "Current", Symbol = 'x' };
+        Player p2 = new Player() { Name = "Opponent", Symbol = 'o' };
+
+        Gridcell upperCell(Gridcell start)
+        {
+            return board.Cells.Find(a => a.Bounds.Y == start.Bounds.Y - start.Bounds.Height && a.Bounds.X == start.Bounds.X);
+        }
+
+        Gridcell leftCell(Gridcell start)
+        {
+            return board.Cells.Find(a => a.Bounds.X == start.Bounds.X - start.Bounds.Width && a.Bounds.Y == start.Bounds.Y);
+        }
+
         Gridcell getCellOnCursor()
         {
             Gridcell g = null;
@@ -94,30 +106,79 @@ namespace Main
             foreach (var item in board.Cells)
             {
                 int count = 0;
-                try
+
+                if (upperCell(item) != null && upperCell(item).Lines[1].Set)
                 {
-                    var gc = board.Cells.Find(a => a.Bounds.Y == item.Bounds.Y - item.Bounds.Height && a.Bounds.X == item.Bounds.X);
-                    if (gc.Lines[1].Set)
-                    {
-                        count++;
-                    }
-                } catch (Exception) { }
-                try
-                {
-                    var gc = board.Cells.Find(a => a.Bounds.X == item.Bounds.X - item.Bounds.Width && a.Bounds.Y == item.Bounds.Y);
-                    if (gc.Lines[0].Set)
-                    {
-                        count++;
-                    }
+                    count++;
                 }
-                catch (Exception) { }
+                if (leftCell(item) != null && leftCell(item).Lines[0].Set)
+                {
+                    count++;
+                }
+                count += item.OutlineDirs.Count;
                 if (item.Lines[0].Set) count++;
                 if (item.Lines[1].Set) count++;
+                if (count == 3)
+                {
+                    ret = true;
+                    break;
+                }
+                if (item.Taken) ret = false;
             }
-
-
-
             return ret;
+        }
+
+        void applyChecks()
+        {
+            foreach (var item in board.Cells)
+            {
+                bool[] count = new bool[4];
+                //var gc = board.Cells.Find(a => a.Bounds.Y == item.Bounds.Y - item.Bounds.Height && a.Bounds.X == item.Bounds.X);
+                if (upperCell(item) != null && upperCell(item).Lines[1].Set)
+                {
+                    count[0] = true;
+                }
+                //var gc = board.Cells.Find(a => a.Bounds.X == item.Bounds.X - item.Bounds.Width && a.Bounds.Y == item.Bounds.Y);
+                if (leftCell(item) != null && leftCell(item).Lines[0].Set)
+                {
+                    count[1] = true;
+                }
+                if (item.Lines[0].Set) count[2] = true;
+                if (item.Lines[1].Set) count[3] = true;
+                int c = item.OutlineDirs.Count;
+                int val = 0;
+                for (int i = 0; i < count.Length; i++)
+                {
+                    if (count[i]) c++;
+                    if (!count[i]) val = i;
+                }
+                if (c >= 3)
+                {
+                    Console.WriteLine(c);
+                    switch (val)
+                    {
+                        case 0:
+                            if (upperCell(item) != null) upperCell(item).Lines[1].Set = true;
+                            Console.WriteLine("set1");
+                            break;
+                        case 1:
+                            item.Lines[0].Set = true;
+                            Console.WriteLine("set 2");
+                            break;
+                        case 2:
+                            item.Lines[1].Set = true;
+                            Console.WriteLine("set 3");
+                            break;
+                        case 3:
+                            if (leftCell(item) != null) leftCell(item).Lines[0].Set = true;
+                            Console.WriteLine("set 4");
+                            break;
+                    }
+                    item.Taken = true;
+                    item.PlayerId = p1.Uid;
+                    break;
+                }
+            }
         }
 
         void draw()
@@ -186,6 +247,10 @@ namespace Main
                     {
                         g.DrawLine(outline, item.Bounds.Left, item.Bounds.Bottom, item.Bounds.Right, item.Bounds.Bottom);
                     }
+                    if (item.Taken)
+                    {
+                        g.DrawString(p1.Symbol.ToString(), Font, new SolidBrush(Color.White), item.Bounds);
+                    }
                 }
             }
         }
@@ -215,7 +280,24 @@ namespace Main
                     board.Cells.Add(new Gridcell() { Bounds = new Rectangle(pZero.X + j * cellSize, pZero.Y + i * cellSize, cellSize, cellSize) });
                 }
             }
-            
+
+            foreach (var item in board.Cells)
+            {
+                try
+                {
+                    var gc = board.Cells.Find(a => a.Bounds.Y == item.Bounds.Y - item.Bounds.Height && a.Bounds.X == item.Bounds.X);
+                    item.UpperCell = gc;
+                }
+                catch (Exception) {  }
+                try
+                {
+                    var gc = board.Cells.Find(a => a.Bounds.X == item.Bounds.X - item.Bounds.Width && a.Bounds.Y == item.Bounds.Y);
+                    item.LeftCell = gc;
+                }
+                catch (Exception) {  }
+            }
+
+
             screen = new Bitmap(canvas.Width, canvas.Height);
             DoDraw();
         }
@@ -288,6 +370,9 @@ namespace Main
                     }
                 }
                 e.Graphics.DrawLine(new Pen(Color.DarkOrange, 3), line[0], line[1]);
+                //if (g.UpperCell != null && g.UpperCell.Lines[0].Set) e.Graphics.FillRectangle(new SolidBrush(Color.FromArgb(100, Color.Red)), g.UpperCell.Bounds);
+                //if (g.LeftCell != null) e.Graphics.FillRectangle(new SolidBrush(Color.FromArgb(100, Color.Green)), g.LeftCell.Bounds);
+
             }
         }
 
@@ -322,8 +407,9 @@ namespace Main
                     {
                         try
                         {
-                            var gc = board.Cells.Find(a => a.Bounds.Y == g.Bounds.Y - g.Bounds.Height && a.Bounds.X == g.Bounds.X);
-                            gc.Lines[1].Set = true;
+                            upperCell(g).Lines[1].Set = true;
+                            //var gc = board.Cells.Find(a => a.Bounds.Y == g.Bounds.Y - g.Bounds.Height && a.Bounds.X == g.Bounds.X);
+                            //gc.Lines[1].Set = true;
                         }
                         catch (Exception) { }
                     }
@@ -356,10 +442,26 @@ namespace Main
                     {
                         try
                         {
-                            var gc = board.Cells.Find(a => a.Bounds.X == g.Bounds.X - g.Bounds.Width && a.Bounds.Y == g.Bounds.Y);
-                            gc.Lines[0].Set = true;
+                            leftCell(g).Lines[0].Set = true;
+                            //var gc = board.Cells.Find(a => a.Bounds.X == g.Bounds.X - g.Bounds.Width && a.Bounds.Y == g.Bounds.Y);
+                            //gc.Lines[0].Set = true;
                         }
                         catch (Exception) { }
+                    }
+                }
+                if (isCheckPossible())
+                {
+                    applyChecks();
+                }
+                int c = 0;
+                while (isCheckPossible())
+                {
+                    c++;
+                    applyChecks();
+                    Console.WriteLine("checking");
+                    if (c > 10)
+                    {
+                        break;
                     }
                 }
                 DoOnGridDraw();
