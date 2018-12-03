@@ -5,6 +5,8 @@ using System.Data;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -20,13 +22,15 @@ namespace Main
 
         Gridboard board = new Gridboard();
         Bitmap screen;
+        Bitmap overlay;
 
         Size canvasSize = new Size();
         Point MPos = new Point();
-        int cellSize = 40;
+        int cellSize = 30;
         Point pZero = new Point(5,5);
-        Player p1 = new Player() { Name = "Current", Symbol = Properties.Resources.sym_flash };
-        Player p2 = new Player() { Name = "Opponent", Symbol = Properties.Resources.sym_star };
+        Player player_1 = new Player() { Name = "Current", Symbol = Properties.Resources.sym_flash };
+        Player player_2 = new Player() { Name = "Opponent", Symbol = Properties.Resources.sym_star };
+
         MapCollection maps = new MapCollection();
 
         Gridcell upperCell(Gridcell start)
@@ -167,7 +171,7 @@ namespace Main
                     //if (leftCell(item) != null) leftCell(item).Lines[0].Set = true;
 
                     item.Taken = true;
-                    item.PlayerId = p1.Uid;
+                    item.PlayerId = player_1.Uid;
                 }
             }
         }
@@ -185,6 +189,7 @@ namespace Main
             int left = 0, bottom = 0;
             Pen rec = new Pen(Color.DimGray);
             Pen outline = new Pen(Color.WhiteSmoke, 1);
+            Point p1 = new Point();
             using (var g = Graphics.FromImage(screen))
             {
                 g.Clear(Color.FromArgb(19, 19, 19));
@@ -203,12 +208,14 @@ namespace Main
                         g.DrawLine(outline, item.Bounds.X + item.Bounds.Width, item.Bounds.Y, item.Bounds.X + item.Bounds.Width, item.Bounds.Y + item.Bounds.Height + widthBufX);
                         item.OutlineDirs.Add(Gridcell.OutlineDirection.East);
                         left = left < item.Bounds.X + item.Bounds.Width ? item.Bounds.X + item.Bounds.Width : left;
+                        if (item.GridLocation.X > p1.X) p1.X = item.GridLocation.X;
                     }
                     if (farthestPoint(2, item.Bounds.Location) == item.Bounds.Location)
                     {
                         g.DrawLine(outline, item.Bounds.X + item.Bounds.Width, item.Bounds.Y + item.Bounds.Height, item.Bounds.X - widthBufY, item.Bounds.Y + item.Bounds.Height);
                         item.OutlineDirs.Add(Gridcell.OutlineDirection.South);
                         bottom = bottom < item.Bounds.Y + item.Bounds.Height ? item.Bounds.Y + item.Bounds.Height : bottom;
+                        if (item.GridLocation.Y > p1.Y) p1.Y = item.GridLocation.Y;
                     }
                     if (farthestPoint(3, item.Bounds.Location) == item.Bounds.Location)
                     {
@@ -217,7 +224,7 @@ namespace Main
                     }
                 }
             }
-            canvasSize = new Size(left + 5, bottom + 5);
+            canvasSize = new Size((p1.X + cellSize) * cellSize + 5, (p1.Y + cellSize) * cellSize + 5);
             //canvasSize = new Size(500,500);
         }
 
@@ -225,8 +232,10 @@ namespace Main
         {
             Pen rec = new Pen(Color.Gray);
             Pen outline = new Pen(Color.White, 1);
-            using (var g = Graphics.FromImage(screen))
+
+            using (var g = Graphics.FromImage(overlay))
             {
+                g.Clear(Color.Transparent);
                 foreach (var item in board.Cells)
                 {
                     // Vorhandene Wände
@@ -240,7 +249,7 @@ namespace Main
                     }
                     if (item.Taken)
                     {
-                        g.DrawImage(p1.Symbol, item.Bounds);
+                        g.DrawImage(player_1.Symbol, item.Bounds);
                     }
                 }
             }
@@ -249,8 +258,11 @@ namespace Main
 
         async void DoDraw()
         {
+            Size s = new Size(board.Cells.Max(x => x.GridLocation.X) * cellSize + cellSize * 2, board.Cells.Max(x => x.GridLocation.Y) * cellSize + cellSize * 2);
+            canvas.Size = s;
+            screen = new Bitmap(s.Width, s.Height);
+            overlay = new Bitmap(s.Width, s.Height);
             await Task.Run(() => draw());
-            canvas.Size = canvasSize;
         }
 
         async void DoOnGridDraw()
@@ -273,6 +285,21 @@ namespace Main
             }
         }
 
+        void generateGrid(int index)
+        {
+            int[,] grid = maps.getMap(index);
+            for (int i = 0; i < grid.GetLength(0); i++)
+            {
+                for (int j = 0; j < grid.GetLength(1); j++)
+                {
+                    if (grid[i, j] == 1)
+                    {
+                        board.Cells.Add(new Gridcell() { GridLocation = new Point(j, i), Bounds = new Rectangle(pZero.X + j * cellSize, pZero.Y + i * cellSize, cellSize, cellSize) });
+                    }
+                }
+            }
+        }
+
         private void Form1_Load(object sender, EventArgs e)
         {
             if (Screen.AllScreens.Length <= 1)
@@ -280,10 +307,12 @@ namespace Main
                 Location = new Point(200,200);
             }
             this.DoubleBuffered = true;
-            Discoverer.PeerJoined = ip => Console.WriteLine("JOINED:" + ip);
-            Discoverer.PeerLeft = ip => Console.WriteLine("LEFT:" + ip);
+            player_1.Color = Color.DarkOrange;
+            btn_playerColor.BackColor = player_1.Color;
+            //Discoverer.PeerJoined = ip => Console.WriteLine("JOINED:" + ip);
+            //Discoverer.PeerLeft = ip => Console.WriteLine("LEFT:" + ip);
 
-            Discoverer.Start();
+            //Discoverer.Start();
 
             generateGrid();
             //foreach (var item in board.Cells)
@@ -304,6 +333,7 @@ namespace Main
 
 
             screen = new Bitmap(canvas.Width, canvas.Height);
+            overlay = new Bitmap(canvas.Width, canvas.Height);
             DoDraw();
         }
 
@@ -328,6 +358,7 @@ namespace Main
         private void canvas_Paint(object sender, PaintEventArgs e)
         {
             e.Graphics.DrawImage(screen, 0, 0);
+            e.Graphics.DrawImage(overlay, 0, 0);
             Gridcell g = getCellOnCursor(MPos);
 
             GraphicsPath p1 = new GraphicsPath();
@@ -374,7 +405,7 @@ namespace Main
                         line = new Point[] { new Point(g.Bounds.X, g.Bounds.Y), new Point(g.Bounds.X, g.Bounds.Y + g.Bounds.Height) };
                     }
                 }
-                e.Graphics.DrawLine(new Pen(Color.DarkOrange, 3), line[0], line[1]);
+                e.Graphics.DrawLine(new Pen(player_1.Color, 2), line[0], line[1]);
                 //if (g.UpperCell != null && g.UpperCell.Lines[0].Set) e.Graphics.FillRectangle(new SolidBrush(Color.FromArgb(100, Color.Red)), g.UpperCell.Bounds);
                 //if (g.LeftCell != null) e.Graphics.FillRectangle(new SolidBrush(Color.FromArgb(100, Color.Green)), g.LeftCell.Bounds);
             }
@@ -467,6 +498,84 @@ namespace Main
                 applyChecks();
             }
             DoOnGridDraw();
+        }
+
+        void server()
+        {
+            var Server = new UdpClient(8888);
+            var ResponseData = Encoding.ASCII.GetBytes("SomeResponseData");
+
+            while (true)
+            {
+                var ClientEp = new IPEndPoint(IPAddress.Any, 0);
+                var ClientRequestData = Server.Receive(ref ClientEp);
+                var ClientRequest = Encoding.ASCII.GetString(ClientRequestData);
+                
+                listBox1.BeginInvoke((MethodInvoker)delegate ()
+                {
+                    listBox1.Items.Add(string.Format("Recived {0} from {1}, sending response", ClientRequest, ClientEp.Address.ToString()));
+                });
+                Server.Send(ResponseData, ResponseData.Length, ClientEp);
+            }
+        }
+
+        void client()
+        {
+            var Client = new UdpClient();
+            var RequestData = Encoding.ASCII.GetBytes("SomeRequestData");
+            var ServerEp = new IPEndPoint(IPAddress.Any, 0);
+
+            Client.EnableBroadcast = true;
+            Client.Send(RequestData, RequestData.Length, new IPEndPoint(IPAddress.Broadcast, 8888));
+
+            var ServerResponseData = Client.Receive(ref ServerEp);
+            var ServerResponse = Encoding.ASCII.GetString(ServerResponseData);
+            listBox1.BeginInvoke((MethodInvoker)delegate ()
+            {
+                listBox1.Items.Add(string.Format("Recived {0} from {1}", ServerResponse, ServerEp.Address.ToString()));
+            });
+            Client.Close();
+        }
+
+        private async void btn_host_Click(object sender, EventArgs e)
+        {
+            HostNewGame host = new HostNewGame();
+            if (host.ShowDialog() == DialogResult.OK)
+            {
+
+            }
+            await Task.Run(() => server());
+        }
+
+        private async void btn_join_Click(object sender, EventArgs e)
+        {
+            await Task.Run(() => client());
+        }
+
+        private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void btn_playerColor_Click(object sender, EventArgs e)
+        {
+            if (colorDialog1.ShowDialog() == DialogResult.OK)
+            {
+                player_1.Color = colorDialog1.Color;
+                btn_playerColor.BackColor = player_1.Color;
+            }
+        }
+
+        private void btn_symbol_Click(object sender, EventArgs e)
+        {
+
+
+            btn_symbol.Invalidate();
+        }
+
+        private void btn_symbol_Paint(object sender, PaintEventArgs e)
+        {
+            e.Graphics.DrawImage(player_1.Symbol, btn_symbol.Bounds);
         }
     }
 }
