@@ -25,8 +25,9 @@ namespace Main
         Point MPos = new Point();
         int cellSize = 40;
         Point pZero = new Point(5,5);
-        Player p1 = new Player() { Name = "Current", Symbol = 'x' };
-        Player p2 = new Player() { Name = "Opponent", Symbol = 'o' };
+        Player p1 = new Player() { Name = "Current", Symbol = Properties.Resources.sym_flash };
+        Player p2 = new Player() { Name = "Opponent", Symbol = Properties.Resources.sym_star };
+        MapCollection maps = new MapCollection();
 
         Gridcell upperCell(Gridcell start)
         {
@@ -38,12 +39,12 @@ namespace Main
             return board.Cells.Find(a => a.Bounds.X == start.Bounds.X - start.Bounds.Width && a.Bounds.Y == start.Bounds.Y);
         }
 
-        Gridcell getCellOnCursor()
+        Gridcell getCellOnCursor(Point p)
         {
             Gridcell g = null;
             foreach (var item in board.Cells)
             {
-                if (item.Bounds.Contains(MPos))
+                if (item.Bounds.Contains(p))
                 {
                     g = item;
                 }
@@ -53,44 +54,43 @@ namespace Main
 
         Point farthestPoint(int dir, Point loc)
         {
-            Point p = new Point(0,0);
+            Point p = loc;
             switch (dir)
             {
                 case 0:
-                    p = new Point(canvas.Width, canvas.Height);
                     foreach (var item in board.Cells)
                     {
-                        if (item.Bounds.Location.X == loc.X && item.Bounds.Location.Y < p.Y)
+                        if (item.Bounds.Location.X == p.X)
                         {
-                            p = item.Bounds.Location;
+                            if (item.Bounds.Y < p.Y && item.Bounds.Y > p.Y - cellSize - 5)
+                            {
+                                p = item.Bounds.Location;
+                            }
                         }
                     }
                     break;
                 case 1:
-                    p = new Point(0, 0);
                     foreach (var item in board.Cells)
                     {
-                        if (item.Bounds.Location.Y == loc.Y && item.Bounds.Location.X > p.X)
+                        if (item.Bounds.Location.Y == loc.Y && item.Bounds.Location.X > p.X && item.Bounds.X < p.X + cellSize + 5)
                         {
                             p = item.Bounds.Location;
                         }
                     }
                     break;
                 case 2:
-                    p = new Point(0, 0);
                     foreach (var item in board.Cells)
                     {
-                        if (item.Bounds.Location.X == loc.X && item.Bounds.Location.Y > p.Y)
+                        if (item.Bounds.Location.X == loc.X && item.Bounds.Location.Y > p.Y && item.Bounds.Y < p.Y + cellSize + 5)
                         {
                             p = item.Bounds.Location;
                         }
                     }
                     break;
                 case 3:
-                    p = new Point(canvas.Width, canvas.Height);
                     foreach (var item in board.Cells)
                     {
-                        if (item.Bounds.Location.Y == loc.Y && item.Bounds.Location.X < p.X)
+                        if (item.Bounds.Location.Y == loc.Y && item.Bounds.Location.X < p.X && item.Bounds.X > p.X - cellSize - 5)
                         {
                             p = item.Bounds.Location;
                         }
@@ -118,12 +118,11 @@ namespace Main
                 count += item.OutlineDirs.Count;
                 if (item.Lines[0].Set) count++;
                 if (item.Lines[1].Set) count++;
-                if (count == 3)
+                if (count >= 4 && !item.Taken)
                 {
+                    Console.WriteLine("Check: available " + count);
                     ret = true;
-                    break;
                 }
-                if (item.Taken) ret = false;
             }
             return ret;
         }
@@ -132,51 +131,43 @@ namespace Main
         {
             foreach (var item in board.Cells)
             {
-                bool[] count = new bool[4];
-                //var gc = board.Cells.Find(a => a.Bounds.Y == item.Bounds.Y - item.Bounds.Height && a.Bounds.X == item.Bounds.X);
+                bool[] ct = new bool[4];
+                int count = 0;
+                List<Gridcell.OutlineDirection> dirs = new List<Gridcell.OutlineDirection>() { Gridcell.OutlineDirection.North, Gridcell.OutlineDirection.East, Gridcell.OutlineDirection.South, Gridcell.OutlineDirection.West };
+                Gridcell.OutlineDirection open = Gridcell.OutlineDirection.North;
                 if (upperCell(item) != null && upperCell(item).Lines[1].Set)
                 {
-                    count[0] = true;
+                    ct[0] = true;
+                    count++;
+                    dirs.Remove(Gridcell.OutlineDirection.North);
                 }
-                //var gc = board.Cells.Find(a => a.Bounds.X == item.Bounds.X - item.Bounds.Width && a.Bounds.Y == item.Bounds.Y);
                 if (leftCell(item) != null && leftCell(item).Lines[0].Set)
                 {
-                    count[1] = true;
+                    ct[1] = true;
+                    count++;
+                    dirs.Remove(Gridcell.OutlineDirection.East);
                 }
-                if (item.Lines[0].Set) count[2] = true;
-                if (item.Lines[1].Set) count[3] = true;
-                int c = item.OutlineDirs.Count;
-                int val = 0;
-                for (int i = 0; i < count.Length; i++)
-                {
-                    if (count[i]) c++;
-                    if (!count[i]) val = i;
+                if (item.Lines[0].Set) {
+                    ct[2] = true;
+                    count++;
+                    dirs.Remove(Gridcell.OutlineDirection.South);
                 }
-                if (c >= 3)
+                if (item.Lines[1].Set) {
+                    ct[3] = true;
+                    count++;
+                    dirs.Remove(Gridcell.OutlineDirection.West);
+                }
+                int c = item.OutlineDirs.Count + count;
+                if (c == 4)
                 {
-                    Console.WriteLine(c);
-                    switch (val)
-                    {
-                        case 0:
-                            if (upperCell(item) != null) upperCell(item).Lines[1].Set = true;
-                            Console.WriteLine("set1");
-                            break;
-                        case 1:
-                            item.Lines[0].Set = true;
-                            Console.WriteLine("set 2");
-                            break;
-                        case 2:
-                            item.Lines[1].Set = true;
-                            Console.WriteLine("set 3");
-                            break;
-                        case 3:
-                            if (leftCell(item) != null) leftCell(item).Lines[0].Set = true;
-                            Console.WriteLine("set 4");
-                            break;
-                    }
+                    Console.WriteLine("Set: " +c);
+                    //if (upperCell(item) != null) upperCell(item).Lines[1].Set = true;
+                    //item.Lines[0].Set = true;
+                    //item.Lines[1].Set = true;
+                    //if (leftCell(item) != null) leftCell(item).Lines[0].Set = true;
+
                     item.Taken = true;
                     item.PlayerId = p1.Uid;
-                    break;
                 }
             }
         }
@@ -202,7 +193,6 @@ namespace Main
                     g.DrawRectangle(rec, item.Bounds);
 
                     // Ränder
-                    Console.WriteLine(farthestPoint(3, item.Bounds.Location));
                     if (farthestPoint(0, item.Bounds.Location) == item.Bounds.Location)
                     {
                         g.DrawLine(outline, item.Bounds.X, item.Bounds.Y, item.Bounds.X + item.Bounds.Width + widthBufX, item.Bounds.Y);
@@ -228,12 +218,13 @@ namespace Main
                 }
             }
             canvasSize = new Size(left + 5, bottom + 5);
+            //canvasSize = new Size(500,500);
         }
 
         void drawOnGrid()
         {
             Pen rec = new Pen(Color.Gray);
-            Pen outline = new Pen(Color.WhiteSmoke, 3);
+            Pen outline = new Pen(Color.White, 1);
             using (var g = Graphics.FromImage(screen))
             {
                 foreach (var item in board.Cells)
@@ -249,10 +240,11 @@ namespace Main
                     }
                     if (item.Taken)
                     {
-                        g.DrawString(p1.Symbol.ToString(), Font, new SolidBrush(Color.White), item.Bounds);
+                        g.DrawImage(p1.Symbol, item.Bounds);
                     }
                 }
             }
+            canvas.Invalidate();
         }
 
         async void DoDraw()
@@ -266,36 +258,49 @@ namespace Main
             await Task.Run(() => drawOnGrid());
         }
 
+        void generateGrid()
+        {
+            int[,] grid = maps.getRandomMap();
+            for (int i = 0; i < grid.GetLength(0); i++)
+            {
+                for (int j = 0; j < grid.GetLength(1); j++)
+                {
+                    if (grid[i,j] == 1)
+                    {
+                        board.Cells.Add(new Gridcell() { GridLocation = new Point(j, i), Bounds = new Rectangle(pZero.X + j * cellSize, pZero.Y + i * cellSize, cellSize, cellSize) });
+                    }
+                }
+            }
+        }
+
         private void Form1_Load(object sender, EventArgs e)
         {
+            if (Screen.AllScreens.Length <= 1)
+            {
+                Location = new Point(200,200);
+            }
             this.DoubleBuffered = true;
-            //Discoverer.PeerJoined = ip => Console.WriteLine("JOINED:" + ip);
-            //Discoverer.PeerLeft = ip => Console.WriteLine("LEFT:" + ip);
+            Discoverer.PeerJoined = ip => Console.WriteLine("JOINED:" + ip);
+            Discoverer.PeerLeft = ip => Console.WriteLine("LEFT:" + ip);
 
-            //Discoverer.Start();
-            for (int i = 0; i < 10; i++)
-            {
-                for (int j = 0; j < 12; j++)
-                {
-                    board.Cells.Add(new Gridcell() { Bounds = new Rectangle(pZero.X + j * cellSize, pZero.Y + i * cellSize, cellSize, cellSize) });
-                }
-            }
+            Discoverer.Start();
 
-            foreach (var item in board.Cells)
-            {
-                try
-                {
-                    var gc = board.Cells.Find(a => a.Bounds.Y == item.Bounds.Y - item.Bounds.Height && a.Bounds.X == item.Bounds.X);
-                    item.UpperCell = gc;
-                }
-                catch (Exception) {  }
-                try
-                {
-                    var gc = board.Cells.Find(a => a.Bounds.X == item.Bounds.X - item.Bounds.Width && a.Bounds.Y == item.Bounds.Y);
-                    item.LeftCell = gc;
-                }
-                catch (Exception) {  }
-            }
+            generateGrid();
+            //foreach (var item in board.Cells)
+            //{
+            //    try
+            //    {
+            //        var gc = board.Cells.Find(a => a.Bounds.Y == item.Bounds.Y - item.Bounds.Height && a.Bounds.X == item.Bounds.X);
+            //        item.UpperCell = gc;
+            //    }
+            //    catch (Exception) {  }
+            //    try
+            //    {
+            //        var gc = board.Cells.Find(a => a.Bounds.X == item.Bounds.X - item.Bounds.Width && a.Bounds.Y == item.Bounds.Y);
+            //        item.LeftCell = gc;
+            //    }
+            //    catch (Exception) {  }
+            //}
 
 
             screen = new Bitmap(canvas.Width, canvas.Height);
@@ -316,14 +321,14 @@ namespace Main
 
         private void Form1_Resize(object sender, EventArgs e)
         {
-            panel_left.Height = canvas.Height;
-            screen = new Bitmap(canvas.Width, canvas.Height);
+            panel_left.Height = this.Height - panel1.Height;
+            canvas.Invalidate();
         }
 
         private void canvas_Paint(object sender, PaintEventArgs e)
         {
             e.Graphics.DrawImage(screen, 0, 0);
-            Gridcell g = getCellOnCursor();
+            Gridcell g = getCellOnCursor(MPos);
 
             GraphicsPath p1 = new GraphicsPath();
             GraphicsPath p2 = new GraphicsPath();
@@ -372,7 +377,6 @@ namespace Main
                 e.Graphics.DrawLine(new Pen(Color.DarkOrange, 3), line[0], line[1]);
                 //if (g.UpperCell != null && g.UpperCell.Lines[0].Set) e.Graphics.FillRectangle(new SolidBrush(Color.FromArgb(100, Color.Red)), g.UpperCell.Bounds);
                 //if (g.LeftCell != null) e.Graphics.FillRectangle(new SolidBrush(Color.FromArgb(100, Color.Green)), g.LeftCell.Bounds);
-
             }
         }
 
@@ -384,7 +388,7 @@ namespace Main
 
         private void canvas_MouseClick(object sender, MouseEventArgs e)
         {
-            var g = getCellOnCursor();
+            var g = getCellOnCursor(MPos);
 
             GraphicsPath p1 = new GraphicsPath();
             GraphicsPath p2 = new GraphicsPath();
@@ -393,7 +397,6 @@ namespace Main
 
             if (g != null)
             {
-
                 p1.AddPolygon(new Point[] { new Point(g.Bounds.Location.X, g.Bounds.Location.Y), new Point(g.Bounds.X + g.Bounds.Width, g.Bounds.Y), new Point(g.Bounds.Location.X + g.Bounds.Width / 2, g.Bounds.Location.Y + g.Bounds.Height / 2), new Point(g.Bounds.Location.X, g.Bounds.Location.Y) });
                 p2.AddPolygon(new Point[] { new Point(g.Bounds.Location.X + g.Bounds.Width, g.Bounds.Location.Y), new Point(g.Bounds.X + g.Bounds.Width, g.Bounds.Y + g.Bounds.Height), new Point(g.Bounds.Location.X + g.Bounds.Width / 2, g.Bounds.Location.Y + g.Bounds.Height / 2), new Point(g.Bounds.Location.X + g.Bounds.Width, g.Bounds.Location.Y) });
                 p3.AddPolygon(new Point[] { new Point(g.Bounds.Location.X, g.Bounds.Location.Y + g.Bounds.Height), new Point(g.Bounds.X + g.Bounds.Width, g.Bounds.Y + g.Bounds.Height), new Point(g.Bounds.Location.X + g.Bounds.Width / 2, g.Bounds.Location.Y + g.Bounds.Height / 2), new Point(g.Bounds.Location.X, g.Bounds.Location.Y + g.Bounds.Height) });
@@ -443,29 +446,27 @@ namespace Main
                         try
                         {
                             leftCell(g).Lines[0].Set = true;
+                            Console.WriteLine("Line 0" + leftCell(g).Lines[0].Set);
                             //var gc = board.Cells.Find(a => a.Bounds.X == g.Bounds.X - g.Bounds.Width && a.Bounds.Y == g.Bounds.Y);
                             //gc.Lines[0].Set = true;
                         }
                         catch (Exception) { }
                     }
                 }
-                if (isCheckPossible())
-                {
-                    applyChecks();
-                }
-                int c = 0;
-                while (isCheckPossible())
-                {
-                    c++;
-                    applyChecks();
-                    Console.WriteLine("checking");
-                    if (c > 10)
-                    {
-                        break;
-                    }
-                }
-                DoOnGridDraw();
+                CheckOnAvailable();
             }
+        }
+
+        async void CheckOnAvailable()
+        {
+            bool possible = await Task.Run(() => isCheckPossible());
+            while (possible)
+            {
+                possible = await Task.Run(() => isCheckPossible());
+                await Task.Run(() => applyChecks());
+                applyChecks();
+            }
+            DoOnGridDraw();
         }
     }
 }

@@ -52,6 +52,7 @@ namespace Main
         }
         List<OutlineDirection> outlineDirs = new List<OutlineDirection>();
         Rectangle bounds = new Rectangle();
+        Point gridLocation = new Point(0,0);
         line[] lines = new line[2];
         bool taken = false;
         Guid playerId;
@@ -65,5 +66,6 @@ namespace Main
         public List<OutlineDirection> OutlineDirs { get => outlineDirs; set => outlineDirs = value; }
         public Gridcell UpperCell { get => upperCell; set => upperCell = value; }
         public Gridcell LeftCell { get => leftCell; set => leftCell = value; }
+        public Point GridLocation { get => gridLocation; set => gridLocation = value; }
     }
 }

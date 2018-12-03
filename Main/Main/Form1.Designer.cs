@@ -54,7 +54,7 @@
             // 
             // label1
             // 
-            this.label1.Font = new System.Drawing.Font("Quicksand Book", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label1.Location = new System.Drawing.Point(55, 4);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(535, 37);
@@ -79,10 +79,10 @@
             // 
             // canvas
             // 
-            this.canvas.Location = new System.Drawing.Point(358, 98);
+            this.canvas.Location = new System.Drawing.Point(358, 75);
             this.canvas.Margin = new System.Windows.Forms.Padding(6, 5, 6, 5);
             this.canvas.Name = "canvas";
-            this.canvas.Size = new System.Drawing.Size(571, 453);
+            this.canvas.Size = new System.Drawing.Size(571, 511);
             this.canvas.TabIndex = 1;
             this.canvas.TabStop = false;
             this.canvas.Paint += new System.Windows.Forms.PaintEventHandler(this.canvas_Paint);
@@ -124,18 +124,19 @@
             // 
             // Form1
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(11F, 23F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(11F, 24F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(19)))), ((int)(((byte)(19)))), ((int)(((byte)(19)))));
             this.ClientSize = new System.Drawing.Size(1149, 609);
             this.Controls.Add(this.panel_left);
             this.Controls.Add(this.canvas);
             this.Controls.Add(this.panel1);
-            this.Font = new System.Drawing.Font("Roboto Lt", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(247)))), ((int)(((byte)(247)))));
+            this.Location = new System.Drawing.Point(-1800, 300);
             this.Margin = new System.Windows.Forms.Padding(6, 5, 6, 5);
             this.Name = "Form1";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "Käsekästchen";
             this.Load += new System.EventHandler(this.Form1_Load);
             this.Resize += new System.EventHandler(this.Form1_Resize);

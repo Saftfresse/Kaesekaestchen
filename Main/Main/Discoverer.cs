@@ -11,8 +11,8 @@ namespace Main
 {
     public class Discoverer
     {
-        static string MULTICAST_IP = "238.212.223.50"; //Random between 224.X.X.X - 239.X.X.X
-        static int MULTICAST_PORT = 2015;    //Random
+        static string MULTICAST_IP = "238.212.223.55"; //Random between 224.X.X.X - 239.X.X.X
+        static int MULTICAST_PORT = 2018;    //Random
 
         static UdpClient _UdpClient;
         static MemoryCache _Peers = new MemoryCache("_PEERS_");
