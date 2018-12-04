@@ -102,6 +102,7 @@
             this.Margin = new System.Windows.Forms.Padding(6);
             this.Name = "HostNewGame";
             this.Text = "Neues Spiel Hosten";
+            this.Load += new System.EventHandler(this.HostNewGame_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
 

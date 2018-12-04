@@ -17,10 +17,18 @@ namespace Main
             InitializeComponent();
         }
 
+        public string Servername = "";
+
         private void button1_Click(object sender, EventArgs e)
         {
+            Servername = textBox1.Text;
             DialogResult = DialogResult.OK;
             this.Close();
+        }
+
+        private void HostNewGame_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }

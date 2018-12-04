@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -308,6 +309,9 @@ namespace Main
             }
             this.DoubleBuffered = true;
             player_1.Color = Color.DarkOrange;
+            Random r = new Random();
+            player_1.Name = "New_Player " + r.Next(1,100);
+            lbl_playerName.Text = player_1.Name;
             btn_playerColor.BackColor = player_1.Color;
             //Discoverer.PeerJoined = ip => Console.WriteLine("JOINED:" + ip);
             //Discoverer.PeerLeft = ip => Console.WriteLine("LEFT:" + ip);
@@ -500,56 +504,53 @@ namespace Main
             DoOnGridDraw();
         }
 
-        void server()
-        {
-            var Server = new UdpClient(8888);
-            var ResponseData = Encoding.ASCII.GetBytes("SomeResponseData");
+        
 
+        void receiveThread()
+        {
             while (true)
             {
-                var ClientEp = new IPEndPoint(IPAddress.Any, 0);
-                var ClientRequestData = Server.Receive(ref ClientEp);
-                var ClientRequest = Encoding.ASCII.GetString(ClientRequestData);
-                
-                listBox1.BeginInvoke((MethodInvoker)delegate ()
+                TcpListener tcpListener = new TcpListener(IPAddress.Any, 8888);
+                tcpListener.Start();
+
+                Console.WriteLine("Waiting for connection...");
+
+                TcpClient tcpClient = tcpListener.AcceptTcpClient();
+
+                Console.WriteLine("Connected with {0}", tcpClient.Client.RemoteEndPoint);
+
+                while (!(tcpClient.Client.Poll(20, SelectMode.SelectRead)))
                 {
-                    listBox1.Items.Add(string.Format("Recived {0} from {1}, sending response", ClientRequest, ClientEp.Address.ToString()));
-                });
-                Server.Send(ResponseData, ResponseData.Length, ClientEp);
+                    NetworkStream networkStream = tcpClient.GetStream();
+                    StreamReader streamReader = new StreamReader(networkStream);
+
+                    string data = streamReader.ReadLine();
+
+                    if (data != null)
+                    {
+                        Console.WriteLine("Received data: {0}", data);
+                    }
+                }
+                Console.WriteLine("Dissconnected...\n");
+                tcpListener.Stop();
             }
         }
 
-        void client()
-        {
-            var Client = new UdpClient();
-            var RequestData = Encoding.ASCII.GetBytes("SomeRequestData");
-            var ServerEp = new IPEndPoint(IPAddress.Any, 0);
-
-            Client.EnableBroadcast = true;
-            Client.Send(RequestData, RequestData.Length, new IPEndPoint(IPAddress.Broadcast, 8888));
-
-            var ServerResponseData = Client.Receive(ref ServerEp);
-            var ServerResponse = Encoding.ASCII.GetString(ServerResponseData);
-            listBox1.BeginInvoke((MethodInvoker)delegate ()
-            {
-                listBox1.Items.Add(string.Format("Recived {0} from {1}", ServerResponse, ServerEp.Address.ToString()));
-            });
-            Client.Close();
-        }
 
         private async void btn_host_Click(object sender, EventArgs e)
         {
             HostNewGame host = new HostNewGame();
             if (host.ShowDialog() == DialogResult.OK)
             {
-
+                LobbyForm f = new LobbyForm(host.Servername);
+                f.Show();
             }
-            await Task.Run(() => server());
         }
 
-        private async void btn_join_Click(object sender, EventArgs e)
+        private void btn_join_Click(object sender, EventArgs e)
         {
-            await Task.Run(() => client());
+            JoinGame join = new JoinGame(player_1);
+            join.Show();
         }
 
         private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
