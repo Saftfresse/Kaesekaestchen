@@ -23,12 +23,11 @@ namespace Main
             InitializeComponent();
         }
         
-        List<Player> lobbyPlayers = new List<Player>();
 
         void client()
         {
             var Client = new UdpClient();
-            var RequestData = Encoding.ASCII.GetBytes("SomeRequestData");
+            var RequestData = Encoding.ASCII.GetBytes("");
             var ServerEp = new IPEndPoint(IPAddress.Any, 0);
 
             Client.EnableBroadcast = true;
@@ -40,7 +39,7 @@ namespace Main
                 var ServerResponse = Encoding.ASCII.GetString(ServerResponseData);
 
                 ListViewItem lvi = new ListViewItem();
-                lvi.Text = ServerResponse;
+                lvi.Text = ServerResponse + ServerEp.Address;
                 lvi.Tag = ServerEp;
 
                 listBox1.Invoke((MethodInvoker)delegate { listBox1.Items.Add(lvi); });

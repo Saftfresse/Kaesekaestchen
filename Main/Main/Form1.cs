@@ -25,12 +25,18 @@ namespace Main
         Bitmap screen;
         Bitmap overlay;
 
+        List<Image> symbols = new List<Image>() {
+            Properties.Resources.sym_circle,
+            Properties.Resources.sym_cross,
+            Properties.Resources.sym_flash,
+            Properties.Resources.sym_star };
+
         Size canvasSize = new Size();
         Point MPos = new Point();
         int cellSize = 30;
         Point pZero = new Point(5,5);
-        Player player_1 = new Player() { Name = "Current", Symbol = Properties.Resources.sym_flash };
-        Player player_2 = new Player() { Name = "Opponent", Symbol = Properties.Resources.sym_star };
+        Player player_1 = new Player() { Name = "Current", Symbol = 2 };
+        Player player_2 = new Player() { Name = "Opponent", Symbol = 3 };
 
         MapCollection maps = new MapCollection();
 
@@ -250,7 +256,7 @@ namespace Main
                     }
                     if (item.Taken)
                     {
-                        g.DrawImage(player_1.Symbol, item.Bounds);
+                        g.DrawImage(symbols[player_1.Symbol], item.Bounds);
                     }
                 }
             }
@@ -303,6 +309,9 @@ namespace Main
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            
+
+
             if (Screen.AllScreens.Length <= 1)
             {
                 Location = new Point(200,200);
@@ -542,7 +551,7 @@ namespace Main
             HostNewGame host = new HostNewGame();
             if (host.ShowDialog() == DialogResult.OK)
             {
-                LobbyForm f = new LobbyForm(host.Servername);
+                LobbyForm f = new LobbyForm(host.Servername, true, player_1);
                 f.Show();
             }
         }
@@ -576,7 +585,7 @@ namespace Main
 
         private void btn_symbol_Paint(object sender, PaintEventArgs e)
         {
-            e.Graphics.DrawImage(player_1.Symbol, btn_symbol.Bounds);
+            e.Graphics.DrawImage(symbols[player_1.Symbol], btn_symbol.Bounds);
         }
     }
 }

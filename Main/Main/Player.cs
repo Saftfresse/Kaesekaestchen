@@ -15,14 +15,14 @@ namespace Main
 
         Guid uid = Guid.NewGuid();
         string name = "New Player";
-        Image symbol = Properties.Resources.sym_circle;
+        int symbol = 0;
         Color color = Color.Green;
-        IPEndPoint address = new IPEndPoint(IPAddress.None, 8888);
+        string address = "0.0.0.0";
 
         public Guid Uid { get => uid; set => uid = value; }
         public string Name { get => name; set => name = value; }
-        public Image Symbol { get => symbol; set => symbol = value; }
+        public int Symbol { get => symbol; set => symbol = value; }
         public Color Color { get => color; set => color = value; }
-        public IPEndPoint Address { get => address; set => address = value; }
+        public string Address { get => address; set => address = value; }
     }
 }
