@@ -29,6 +29,8 @@ namespace Main
             InitializeComponent();
         }
 
+        public byte[] ResponseData { get; private set; }
+
         private async void LobbyForm_Load(object sender, EventArgs e)
         {
             label3.Text = sName;
