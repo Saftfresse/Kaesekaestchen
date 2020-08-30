@@ -30,7 +30,7 @@ namespace Käsekästchen
         private void button1_Click(object sender, EventArgs e)
         {
             Random r = new Random(5);
-            players.Add(new Client(this, Color.FromArgb(r.Next(1,255), r.Next(1, 255), r.Next(1, 255)), "New Player " + players.Count));
+            players.Add(new Client(this, Color.FromArgb(r.Next(1,255), r.Next(1, 255), r.Next(1, 255)), tb_server.Text, "New Player " + players.Count));
         }
 
         private void button2_Click(object sender, EventArgs e)

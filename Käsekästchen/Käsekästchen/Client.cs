@@ -34,7 +34,7 @@ namespace Käsekästchen
 
         public ClientView view;
 
-        public Client(Form1 _form, Color _color, string _name = "Unkwown player")
+        public Client(Form1 _form, Color _color, string _address = "127.0.0.1", string _name = "Unkwown player")
         {
             form = _form;
             id = Guid.NewGuid();
@@ -43,7 +43,7 @@ namespace Käsekästchen
             thisClient = new ClientInfo() { Name = _name, Id = id, Color = _color };
             view = new ClientView(thisClient);
 
-            client = new WatsonTcpClient("127.0.0.1", 12000);
+            client = new WatsonTcpClient(_address, 12000);
 
             client.ServerConnected += Client_ServerConnected;
             client.ServerDisconnected += Client_ServerDisconnected;
