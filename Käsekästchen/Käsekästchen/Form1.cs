@@ -18,18 +18,24 @@ namespace Käsekästchen
             InitializeComponent();
         }
 
-        Server server = new Server();
-        Client client = new Client();
+        Server server;
 
-        private async void Form1_Load(object sender, EventArgs e)
+        List<Client> players = new List<Client>();
+
+        private void Form1_Load(object sender, EventArgs e)
         {
-            await Task.Run(() => server.StartMulticast());
-            await Task.Run(() => server.Start());
+
         }
 
-        private async void button1_Click(object sender, EventArgs e)
+        private void button1_Click(object sender, EventArgs e)
         {
-            await Task.Run(() => client.ConnectMulticast());
+            Random r = new Random(5);
+            players.Add(new Client(this, Color.FromArgb(r.Next(1,255), r.Next(1, 255), r.Next(1, 255)), "New Player " + players.Count));
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            server = new Server();
         }
     }
 }
