@@ -35,7 +35,7 @@ namespace Käsekästchen
         public Server()
         {
             view = new ServerView();
-            server = new WatsonTcpServer("127.0.0.1", 12000);
+            server = new WatsonTcpServer("192.168.178.42", 12000);
 
             server.ClientConnected += Server_ClientConnected;
             server.ClientDisconnected += Server_ClientDisconnected;
@@ -60,38 +60,59 @@ namespace Käsekästchen
 
         private void Server_MessageReceived(object sender, MessageReceivedFromClientEventArgs e)
         {
-            Payload p = JsonConvert.DeserializeObject<Payload>(Encoding.UTF8.GetString(e.Data));
-            Log("REC " + p.Type);
-            switch (p.Type)
+            //
+            // Types
+            // 000 = Payload
+            // 001 = ClientMove
+            //  data = guid;posX:posY
+            //
+            object type = "000";
+            e.Metadata.TryGetValue("type", out type);
+            switch (type)
             {
-                case Payload.PayloadType.ClientInfo:
-                    ClientInfo ci = JsonConvert.DeserializeObject<ClientInfo>(p.Data);
-                    ci.Address = e.IpPort;
-                    if (connectedClients.Where(x => x.Id == ci.Id).Count() <= 0)
+                case "payload":
+                    Payload p = JsonConvert.DeserializeObject<Payload>(Encoding.UTF8.GetString(e.Data));
+                    Log("REC " + p.Type);
+                    switch (p.Type)
                     {
-                        connectedClients.Add(ci);
-                        Log(ci.Id.ToString() + " - " + ci.Name + " Connected!");
-                    }
-                    else
-                    {
-                        connectedClients[connectedClients.FindIndex(x => x.Id == ci.Id)] = ci;
-                    }
-                    RefreshClients();
-                    break;
-                case Payload.PayloadType.ClientCommand:
-                    switch (p.DataType)
-                    {
-                        case Payload.PayloadDataType.ClientMove:
+                        case Payload.PayloadType.ClientInfo:
+                            ClientInfo ci = JsonConvert.DeserializeObject<ClientInfo>(p.Data);
+                            ci.Address = e.IpPort;
+                            if (connectedClients.Where(x => x.Id == ci.Id).Count() <= 0)
+                            {
+                                connectedClients.Add(ci);
+                                Log(ci.Id.ToString() + " - " + ci.Name + " Connected!");
+                            }
+                            else
+                            {
+                                connectedClients[connectedClients.FindIndex(x => x.Id == ci.Id)] = ci;
+                            }
+                            RefreshClients();
+                            break;
+                        case Payload.PayloadType.ClientCommand:
+                            switch (p.DataType)
+                            {
+                                case Payload.PayloadDataType.ClientMove:
+
+                                    break;
+                                case Payload.PayloadDataType.ClientClick:
+                                    break;
+                            }
+                            break;
+                        case Payload.PayloadType.ServerCommand:
 
                             break;
-                        case Payload.PayloadDataType.ClientClick:
-                            break;
                     }
                     break;
-                case Payload.PayloadType.ServerCommand:
-
+                case "move":
+                    string[] spl = Encoding.UTF8.GetString(e.Data).Split(';');
+                    connectedClients.Find(x => x.Id == Guid.Parse(spl[0])).Location = new System.Drawing.PointF(float.Parse(spl[1].Split(':')[0]), float.Parse(spl[1].Split(':')[1]));
+                    Broadcast(Encoding.UTF8.GetString(e.Data), "move");
+                    break;
+                default:
                     break;
             }
+            
             Payload pb = new Payload() { Data = "Received", Type = Payload.PayloadType.ServerCommand, DataType = Payload.PayloadDataType.MsgAcknowledged };
             server.SendAsync(e.IpPort, JsonConvert.SerializeObject(pb));
         }
@@ -108,7 +129,6 @@ namespace Käsekästchen
             server.SendAsync(e.IpPort, JsonConvert.SerializeObject(pb));
             Log("Client Conn: " + e.IpPort);
         }
-
         void RefreshClients()
         {
             view.Invoke((MethodInvoker)(() =>
@@ -124,9 +144,23 @@ namespace Käsekästchen
         void Broadcast(Payload _p)
         {
             string payload = JsonConvert.SerializeObject(_p);
+            var meta = new Dictionary<object, object>();
+            meta.Add("type", "payload");
             foreach (var c in connectedClients)
             {
-                server.SendAsync(c.Address, payload);
+                server.SendAsync(c.Address, meta, payload);
+            }
+        }
+
+        void Broadcast(string _data, string type)
+        {
+            string payload = _data;
+            var meta = new Dictionary<object, object>();
+            meta.Add("type", type);
+            foreach (var c in connectedClients)
+            {
+                server.SendAsync(c.Address, meta, payload);
+                
             }
         }
 

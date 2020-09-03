@@ -68,7 +68,7 @@
             this.tb_server.Name = "tb_server";
             this.tb_server.Size = new System.Drawing.Size(312, 20);
             this.tb_server.TabIndex = 3;
-            this.tb_server.Text = "127.0.0.1";
+            this.tb_server.Text = "192.168.178.42";
             // 
             // Form1
             // 

@@ -30,7 +30,7 @@ namespace Käsekästchen
         public Form1 Form { get => form; set => form = value; }
 
 
-        Timer locTimer = new Timer() { Interval = 10 };
+        Timer locTimer = new Timer() { Interval = 50 };
 
         public ClientView view;
 
@@ -53,7 +53,17 @@ namespace Käsekästchen
 
             Console.WriteLine(thisClient.Name);
 
-            SyncClient();
+            client.SendAsync(
+                new Dictionary<object, object>() { { "type", "payload" } },
+                Encoding.UTF8.GetBytes(
+                    JsonConvert.SerializeObject(
+                        new Payload()
+                        {
+                            Type = Payload.PayloadType.ClientInfo,
+                            Data = JsonConvert.SerializeObject(thisClient)
+                        })
+                    )
+                );
 
             view.canvas.MouseMove += Canvas_MouseMove;
             view.canvas.MouseClick += Canvas_MouseClick;
@@ -75,16 +85,20 @@ namespace Käsekästchen
 
         void SyncClient()
         {
-            client.SendAsync(
-                Encoding.UTF8.GetBytes(
-                    JsonConvert.SerializeObject(
-                        new Payload()
-                        {
-                            Type = Payload.PayloadType.ClientInfo,
-                            Data = JsonConvert.SerializeObject(thisClient)
-                        })
-                    )
+            client.Send(
+                new Dictionary<object, object>() { { "type", "move" } },
+                Encoding.UTF8.GetBytes( string.Format("{0};{1}:{2}", thisClient.Id.ToString(), thisClient.Location.X, thisClient.Location.Y) )
                 );
+            //client.SendAsync(
+            //    Encoding.UTF8.GetBytes(
+            //        JsonConvert.SerializeObject(
+            //            new Payload()
+            //            {
+            //                Type = Payload.PayloadType.ClientInfo,
+            //                Data = JsonConvert.SerializeObject(thisClient)
+            //            })
+            //        )
+            //    );
         }
 
         private void Canvas_MouseClick(object sender, MouseEventArgs e)
@@ -99,17 +113,13 @@ namespace Käsekästchen
 
         private void Canvas_MouseMove(object sender, MouseEventArgs e)
         {
-            Log(e.Location.ToString());
-
-            locTimer.Start();
-
             thisClient.Location = e.Location;
+            SyncClient();
+            //if (!locTimer.Enabled)
+            //{
+            //    locTimer.Start();
+            //}
 
-            view.Invoke((MethodInvoker)(() =>
-            {
-
-            }
-            ));
         }
 
         private void View_FormClosed(object sender, FormClosedEventArgs e)
@@ -135,40 +145,59 @@ namespace Käsekästchen
 
         private void Client_MessageReceived(object sender, MessageReceivedFromServerEventArgs e)
         {
-            Payload p = JsonConvert.DeserializeObject<Payload>(Encoding.UTF8.GetString(e.Data));
-            Console.WriteLine(p.Data);
-            switch (p.Type)
+            object type = "000";
+            e.Metadata.TryGetValue("type", out type);
+            switch (type)
             {
-                case Payload.PayloadType.ClientInfo:
-                    break;
-                case Payload.PayloadType.ClientCommand:
-                    break;
-                case Payload.PayloadType.ServerCommand:
-                    switch (p.DataType)
+                case "payload":
+                    Payload p = JsonConvert.DeserializeObject<Payload>(Encoding.UTF8.GetString(e.Data));
+                    Console.WriteLine(p.Data);
+                    switch (p.Type)
                     {
-                        case Payload.PayloadDataType.MsgDisconnect:
-                            Log("Disconnected from Server! Reason: " + p.Data);
+                        case Payload.PayloadType.ClientInfo:
                             break;
-                        case Payload.PayloadDataType.MsgAcknowledged:
-                            Log("Server: Message Received");
+                        case Payload.PayloadType.ClientCommand:
                             break;
-                        case Payload.PayloadDataType.ClientConnected:
-                            Log("Ip if this Client: " + p.Data);
-                            thisClient.Address = p.Data;
+                        case Payload.PayloadType.ServerCommand:
+                            switch (p.DataType)
+                            {
+                                case Payload.PayloadDataType.MsgDisconnect:
+                                    Log("Disconnected from Server! Reason: " + p.Data);
+                                    break;
+                                case Payload.PayloadDataType.MsgAcknowledged:
+                                    Log("Server: Message Received");
+                                    break;
+                                case Payload.PayloadDataType.ClientConnected:
+                                    Log("Ip if this Client: " + p.Data);
+                                    thisClient.Address = p.Data;
+                                    break;
+                            }
+                            break;
+                        case Payload.PayloadType.ClientList:
+                            Console.WriteLine("test");
+                            view.Invoke((MethodInvoker)(() =>
+                            {
+                                view.RefreshClients(JsonConvert.DeserializeObject<List<ClientInfo>>(p.Data));
+                            }
+                            ));
+                            break;
+                        default:
                             break;
                     }
                     break;
-                case Payload.PayloadType.ClientList:
-                    Console.WriteLine("test");
-                    view.Invoke((MethodInvoker)(() =>
+                case "move":
+                    string[] spl = Encoding.UTF8.GetString(e.Data).Split(';');
+                    Guid _id = Guid.Parse(spl[0]);
+                    if (thisClient.Id != _id)
                     {
-                        view.RefreshClients(JsonConvert.DeserializeObject<List<ClientInfo>>(p.Data));
+                        PointF _loc = new System.Drawing.PointF(float.Parse(spl[1].Split(':')[0]), float.Parse(spl[1].Split(':')[1]));
+                        view.RefreshClientPos(_id, _loc);
                     }
-                    ));
                     break;
                 default:
                     break;
             }
+            
         }
 
         private void Client_ServerDisconnected(object sender, EventArgs e)
